@@ -19,7 +19,7 @@
 
 #### `CONST`
 ##### Сигнатура
-`CONST type value` - Положить на стек значение `value` типа `type(enum)`
+`CONST type value` - Положить на стек значение `value` типа [`type(enum)`](#type-типы-значений)
 ##### Пример
 ```
 1:CONST 0 42
@@ -228,3 +228,13 @@
 
 [] -> ["Hello world!"] -> []
 ```
+
+## Enum-ы
+
+### `type` - Типы значений
+0. `number` - число
+1. `bool` - логическое, в `value` 0 - false, 1 - true
+2. `string` - строка, в `value` id строки в `*strings`
+
+### `function_id` - Id функции на машине (beta)
+0. `debug_print` - взять с вершины стека строку, вывести в консоль
