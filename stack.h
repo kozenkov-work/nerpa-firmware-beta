@@ -1,4 +1,5 @@
 #pragma once
+#include "value.h"
 #include <vector>
 
 class Stack {
@@ -6,11 +7,11 @@ class Stack {
 public:
     Stack();
 
-    int pop();
+    Value pop();
     
     void dup();
     void add();
-    void push(int value);
+    void push(Value value);
 
     void print() const;
     bool empty() const;
@@ -18,5 +19,5 @@ public:
     size_t size();
 
 private:
-    std::vector<int> stack_;
+    std::vector<Value> stack_;
 };

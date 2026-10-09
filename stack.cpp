@@ -1,9 +1,9 @@
-#include "Stack.h"
+#include "stack.h"
 #include <iostream>
 
 Stack::Stack() {}
 
-void Stack::push(int value) {
+void Stack::push(Value value) {
     stack_.push_back(value);
 }
 
@@ -13,19 +13,21 @@ void Stack::dup() {
 }
 
 void Stack::print() const {
-    for(size_t i = 0; i < stack_.size(); i++) std::cout << stack_[i] << std::endl;
+    for(size_t i = 0; i < stack_.size(); i++) std::cout << 
+    stack_[i]
+    << std::endl;
 }
 
 bool Stack::empty() const {
     return stack_.empty();
 }
 
-int Stack::pop() {
+Value Stack::pop() {
     if(empty()) { 
         return -1;
     }
 
-    int val = stack_.back();
+    Value val = stack_.back();
     stack_.pop_back();
     return val; 
 }
@@ -35,6 +37,15 @@ size_t Stack::size() {
 }
 
 void Stack::add() { 
-    if(size() <= 1) return;
-    push(pop() + pop()); 
+    if (stack_.size() < 2) return;
+
+    Value b = pop(); 
+    Value a = pop(); 
+
+    try {
+        push(a.getInt() + b.getInt());
+    } catch (const std::exception& e) {
+        push(a);
+        push(b);
+    }
 }
