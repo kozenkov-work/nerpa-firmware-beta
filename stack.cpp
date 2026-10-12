@@ -36,6 +36,10 @@ size_t Stack::size() {
     return stack_.size();
 }
 
+void Stack::clear() {
+    stack_ = {};
+}
+
 void Stack::add() { 
     if (stack_.size() < 2) return;
 

@@ -1,8 +1,9 @@
 #include "value.h"
 
 Value::Value(int value) : data_(value) {}
+Value::Value(bool value) : data_(value) {}
 Value::Value(std::string value) : data_(value) {}
-Value::Value(double value) : data_(value) {}
+Value::Value(float value) : data_(value) {}
 
 int Value::getInt() const {
     if (const int* value = std::get_if<int>(&data_)) return *value;
@@ -20,8 +21,8 @@ std::string Value::getString() const {
     throw std::runtime_error("Value is not str");
 }
 
-double Value::getDouble() const {
-    if (const double* value = std::get_if<double>(&data_)) return *value;
+float Value::getFloat() const {
+    if (const float* value = std::get_if<float>(&data_)) return *value;
     throw std::runtime_error("Value is not double");
 }
 

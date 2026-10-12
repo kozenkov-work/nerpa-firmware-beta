@@ -7,15 +7,15 @@ class Value {
 
 public:
 
-    using Data = std::variant<int, std::string, double, bool>;
+    using Data = std::variant<int, std::string, float, bool>;
 
     Value(int value);
     Value(std::string value);
-    Value(double value);
+    Value(float value);
     Value(bool value);
 
     int getInt() const;
-    double getDouble() const;
+    float getFloat() const;
     std::string getString() const;
     bool getBool() const;
  

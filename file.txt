@@ -1,0 +1,9 @@
+*strings
+0:"Даня пидр"
+
+*code
+1:CONST 2 0
+2:HOST 0
+3:CONST 0 12
+4:HOST 1
+5:HALT

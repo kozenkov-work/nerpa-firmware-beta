@@ -12,6 +12,7 @@ public:
     void dup();
     void add();
     void push(Value value);
+    void clear();
 
     void print() const;
     bool empty() const;
