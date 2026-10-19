@@ -7,14 +7,10 @@
 class VM {
 
 public:
-    VM(const Program& program_, Host& host_);
-
-    void run();
+    void run(const Program& program, Host* host);
 
 private:
     Stack stack_;
-    const Program& program_;
-    Host& host_;
     
     std::size_t ip_ = 0;
     bool running_ = false;

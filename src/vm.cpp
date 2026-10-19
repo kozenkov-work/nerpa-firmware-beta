@@ -1,20 +1,15 @@
 #include "vm.h"
 #include <stdexcept>
 
-VM::VM(const Program& program, Host& host)
-    : program_(program),
-      host_(host) {
-}
-
-void VM::run() {
+void VM::run(const Program& program, Host* host) {
     running_ = true;
-    if (ip_ >= program_.code.size()) {
-        throw std::runtime_error("Instruction pointer out of bounds");
-    }
+    
     while(running_) {
-        const Instruction instruction = program_.code[ip_];  
-        switch (instruction.op)
-        {
+        if (ip_ >= program.code.size()) throw std::runtime_error("Instruction pointer out of bounds");
+        
+        const Instruction& instruction = program.code[ip_];
+        
+        switch (instruction.op) {
             case OpCode::CONST: {
                 switch (instruction.arg1) {
                     case 0: // number
@@ -26,11 +21,9 @@ void VM::run() {
                         break;
 
                     case 2: { // string
-                        auto it = program_.strings.find(instruction.arg2);
+                        auto it = program.strings.find(instruction.arg2);
 
-                        if (it == program_.strings.end()) {
-                            throw std::runtime_error("Unknown string ID");
-                        }
+                        if (it == program.strings.end()) throw std::runtime_error("Unknown string ID");
 
                         stack_.push(Value(it->second));
                         break;
@@ -39,37 +32,49 @@ void VM::run() {
                     default:
                         throw std::runtime_error("Unknown CONST type");
                 }
-
-                ++ip_;
                 break;
             }
+
             case OpCode::ADD: {
                 stack_.print();
                 stack_.add();
-                ++ip_;
                 break;
             }
+
             case OpCode::HOST: {
                 switch (instruction.arg1) {
                     case 0: {
-                        Value value = stack_.pop();
-                        host_.debugPrint(value.getString());
+                        Value value = stack_.top();
+                        host->debugPrint(value.getString());
                         break;
                     }
-                    case 1: {
-                        Value value = stack_.pop();
-                        host_.debugPrint(std::to_string(value.getInt()));
-                        break;
-                    }
-                }
 
-                ++ip_;
+                    case 1: {
+                        Value value = stack_.top();
+                        host->debugPrint(std::to_string(value.getInt()));
+                        break;
+                    }
+
+                    default: throw std::runtime_error("Unknown host function ID");
+                }
                 break;
             }
+
+            case OpCode::JMP: {
+                if (instruction.arg1 >= 0) ip_ = instruction.arg1;
+                break;
+            }
+
             case OpCode::HALT: {
                 running_ = false;
                 break;
             }
+            
+            default: throw std::runtime_error("Unknown opcode");
         }
+        ++ip_; 
+        /* нужно будет потом сделать так, чтобы в зависимости от интсрукции, мы могли 
+        изменять этот ip_ как надо, типо для go to point и тд...
+        */
     }
 }

@@ -3,17 +3,18 @@
 #include "stack.h"
 #include "program.h"
 #include "tokenizer.h"
-#include "desktopHost.h"
+#include "desktop_host.h"
 #include "vm.h"
 
 using namespace std;
 int main() {
-    Tokenizer tokenizer;
-    Program program = tokenizer.load("file.txt");
+    Tokenizer* tokenizer = new Tokenizer;
+    DesktopHost* host = new DesktopHost;
 
-    DesktopHost host;
-    VM vm(program, host);
+    Program program = tokenizer->load("./program_files/file.txt");
 
-    vm.run();
+    VM vm;
+    vm.run(program, host);
+
     return 0;
 }

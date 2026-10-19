@@ -8,6 +8,7 @@ public:
     Stack();
 
     Value pop();
+    Value top();
     
     void dup();
     void add();

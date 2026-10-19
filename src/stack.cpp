@@ -22,6 +22,12 @@ bool Stack::empty() const {
     return stack_.empty();
 }
 
+Value Stack::top() {
+    if(empty()) return -1;
+    Value val = stack_.back();
+    return val;
+}
+
 Value Stack::pop() {
     if(empty()) { 
         return -1;
