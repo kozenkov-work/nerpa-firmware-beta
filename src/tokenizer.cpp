@@ -15,11 +15,20 @@ namespace {
     };
 
     OpCode parseOpCode(const std::string& name) {
-        if (name == "CONST") return OpCode::CONST;
-        if (name == "ADD")   return OpCode::ADD;
+        if (name == "CONST") return OpCode::CONST; //
+        if (name == "ADD") return OpCode::ADD; //
+        if (name == "SUB") return OpCode::SUB; // 
+        if (name == "MUL") return OpCode::MUL; // 
+        if (name == "MOD") return OpCode::MOD; // 
+        if (name == "DIV") return OpCode::DIV; // 
+        if (name == "EQ") return OpCode::EQ; //
+        if (name == "LT") return OpCode::LT; //
+        if (name == "GT") return OpCode::GT;
         if (name == "HOST") return OpCode::HOST;
-        if (name == "JMP") return OpCode::JMP;
-        if (name == "HALT")  return OpCode::HALT;
+        if (name == "JMP") return OpCode::JMP; // 
+        if (name == "DUP") return OpCode::DUP; // 
+        if (name == "HALT")  return OpCode::HALT; // 
+        // слеши, это типо метка, что это есть в вмке
         throw std::runtime_error("Unknown instruction: " + name);
     }   
 }

@@ -10,7 +10,14 @@ public:
     Value pop();
     Value top();
     
+    void div();
+    void mod();
+    void eq();
+    void lt();
+    void gt();
+    void mul();
     void dup();
+    void sub();
     void add();
     void push(Value value);
     void clear();

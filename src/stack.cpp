@@ -38,6 +38,104 @@ Value Stack::pop() {
     return val; 
 }
 
+void Stack::sub() {
+    if (stack_.size() < 2) return;
+    
+    Value v1 = pop();
+    Value v2 = pop();
+
+    try {
+        push(v2.getInt() - v1.getInt());
+    } catch (const std::exception& e) {
+        push(v2);
+        push(v1);
+    }
+}
+
+void Stack::mul() {
+    if (stack_.size() < 2) return;
+
+    Value v1 = pop();
+    Value v2 = pop();
+
+    try {
+        push(v1.getInt() * v2.getInt());
+    } catch(const std::exception& e) {
+        push(v2);
+        push(v1);
+    }
+}
+
+void Stack::div() {
+    if (stack_.size() < 2) return;
+    
+    Value v1 = pop();
+    Value v2 = pop();
+
+    try {
+        push(v2.getInt() / v1.getInt());
+    } catch(const std::exception& e) {
+        push(v2);
+        push(v1);
+    }
+}
+
+void Stack::mod() {
+    if (stack_.size() < 2) return;
+
+    Value v1 = pop();
+    Value v2 = pop();
+
+    try {
+        push(v2.getInt() % v1.getInt());
+    } catch(const std::exception& e) {
+        push(v2);
+        push(v1);
+    }
+}
+
+void Stack::eq() {
+    if (stack_.size() < 2) return;
+
+    Value v1 = pop();
+    Value v2 = pop();
+
+    try {
+        push(v1.getInt() == v2.getInt() ? true : false);
+    } catch(const std::exception& e) {
+        push(v2);
+        push(v1);
+    }
+}
+
+void Stack::lt() {
+    if (stack_.size() < 2) return;
+
+    Value v1 = pop();
+    Value v2 = pop();
+
+    try {
+        push(v1.getInt() > v2.getInt() ? true : false);
+    } catch(const std::exception& e) {
+        push(v2);
+        push(v1);
+    }
+}
+
+void Stack::gt() {
+    if (stack_.size() < 2) return;
+
+    Value v1 = pop();
+    Value v2 = pop();
+
+    try {
+        push(v1.getInt() < v2.getInt() ? true : false);
+    } catch(const std::exception& e) {
+        push(v2);
+        push(v1);
+    }
+}
+
 size_t Stack::size() {
     return stack_.size();
 }
@@ -49,13 +147,13 @@ void Stack::clear() {
 void Stack::add() { 
     if (stack_.size() < 2) return;
 
-    Value b = pop(); 
-    Value a = pop(); 
+    Value v1 = pop(); 
+    Value v2 = pop(); 
 
     try {
-        push(a.getInt() + b.getInt());
+        push(v1.getInt() + v2.getInt());
     } catch (const std::exception& e) {
-        push(a);
-        push(b);
+        push(v2);
+        push(v1);
     }
 }
