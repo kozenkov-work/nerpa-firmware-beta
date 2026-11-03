@@ -99,22 +99,44 @@ void VM::run(const Program& program, Host* host) {
             case OpCode::HOST: {
                 if (host == nullptr) throw std::runtime_error("HOST: host pointer is null");
 
+                switch (static_cast<HostFunction>(instruction.arg1)) {
 
-                if (stack_.empty()) throw std::runtime_error("HOST: stack is empty");
-
-                const Value value = stack_.top();
-
-                switch (instruction.arg1) {
-
-                    case 0: {
+                    case HostFunction::DebugPrintString: {
+                        if (stack_.empty()) throw std::runtime_error("debugPrint: stack is empty");
+                        const Value value = stack_.pop();
                         host->debugPrint(value.getString());
+                        stack_.push(0);
                         break;
                     }
 
-                    case 1: {
-                        host->debugPrint(
-                            std::to_string(value.getInt())
-                        );
+                    case HostFunction::DebugPrintInt: {
+                        if (stack_.empty()) throw std::runtime_error("debugPrint: stack is empty");
+                        const Value value = stack_.pop();
+                        host->debugPrint(std::to_string(value.getInt()));
+                        stack_.push(0);
+                        break;
+                    }
+
+                    case HostFunction::PinMode: {
+                        if (stack_.size() < 2) throw std::runtime_error("pinMode: expected pin and mode");
+                        const int mode = stack_.pop().getInt();
+                        const int pin = stack_.pop().getInt();
+                        stack_.push(host->pinMode(pin, mode));
+                        break;
+                    }
+
+                    case HostFunction::DigitalWrite: {
+                        if (stack_.size() < 2) throw std::runtime_error("digitalWrite: expected pin and value");
+                        const int value = stack_.pop().getInt();
+                        const int pin = stack_.pop().getInt();
+                        stack_.push(host->digitalWrite(pin, value));
+                        break;
+                    }
+
+                    case HostFunction::DigitalRead: {
+                        if (stack_.empty()) throw std::runtime_error("digitalRead: expected pin");
+                        const int pin = stack_.pop().getInt();
+                        stack_.push(host->digitalRead(pin));
                         break;
                     }
 

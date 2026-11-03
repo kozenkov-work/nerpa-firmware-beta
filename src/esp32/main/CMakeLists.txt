@@ -1,0 +1,13 @@
+idf_component_register(
+    SRCS
+        "main.cpp"
+        "../../stack.cpp"
+        "../../value.cpp"
+        "../../tokenizer.cpp"
+        "../../vm.cpp"
+    INCLUDE_DIRS
+        "."
+        "../.."
+    EMBED_TXTFILES
+        "../../../program_files/file.txt"
+)
