@@ -89,6 +89,9 @@ namespace {
 
 Program Tokenizer::load(const std::string& filename) {
     std::ifstream input(filename);
+    if (!input.is_open()) {
+        throw std::runtime_error("Cannot open program: " + filename);
+    }
     return parseProgram(input);
 }
 
