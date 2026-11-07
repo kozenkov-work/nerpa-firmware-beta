@@ -1,0 +1,9 @@
+/build/
+/program_files/
+/eim_config.toml/
+/src/esp32/build/
+/src/esp32/sdkconfig
+/src/esp32/sdkconfig.old
+/src/esp32/managed_components/
+/src/esp32/main/idf_component.yml/
+/src/esp32/sdkconfig.defaults/
