@@ -23,3 +23,22 @@ if(MSVC)
 else()
     target_compile_options(nerpa PRIVATE -Wall -Wextra -pedantic)
 endif()
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(vm_tests
+        tests/vm_tests.cpp
+        src/stack.cpp
+        src/value.cpp
+        src/tokenizer.cpp
+        src/vm.cpp
+        src/desktop_host.cpp
+    )
+    target_include_directories(vm_tests PRIVATE src)
+    if(MSVC)
+        target_compile_options(vm_tests PRIVATE /W4)
+    else()
+        target_compile_options(vm_tests PRIVATE -Wall -Wextra -pedantic)
+    endif()
+    add_test(NAME vm_tests COMMAND vm_tests)
+endif()

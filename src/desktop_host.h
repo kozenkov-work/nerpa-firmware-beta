@@ -8,4 +8,6 @@ public:
     int pinMode(int pin, int mode) override;
     int digitalWrite(int pin, int value) override;
     int digitalRead(int pin) override;
+    int analogWrite(int pin, double value) override;
+    double analogRead(int pin) override;
 };

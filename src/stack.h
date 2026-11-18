@@ -1,15 +1,16 @@
 #pragma once
+
 #include "value.h"
+
+#include <cstddef>
 #include <vector>
 
 class Stack {
-
 public:
-    Stack();
-
     Value pop();
-    Value top();
-    
+    Value top() const;
+
+    void math(int operationId);
     void div();
     void mod();
     void eq();
@@ -24,8 +25,7 @@ public:
 
     void print() const;
     bool empty() const;
-
-    size_t size();
+    std::size_t size() const;
 
 private:
     std::vector<Value> stack_;

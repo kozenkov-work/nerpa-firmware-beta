@@ -27,11 +27,16 @@ private:
         TickType_t readingChangedAt = 0;
     };
 
+    static constexpr gpio_num_t RESET_PIN = GPIO_NUM_25;
+
     bool update(ButtonState& button);
+    static void IRAM_ATTR resetIsr(void* context);
 
     ButtonState up_{GPIO_NUM_13};
     ButtonState down_{GPIO_NUM_14};
     ButtonState select_{GPIO_NUM_27};
     ButtonState back_{GPIO_NUM_26};
-    ButtonState reset_{GPIO_NUM_25};
+
+    volatile bool resetInterruptPending_ = false;
+    TickType_t lastResetHandledAt_ = 0;
 };

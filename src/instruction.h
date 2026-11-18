@@ -1,9 +1,12 @@
-#include "value.h"
-enum class OpCode {
+#pragma once
 
+enum class OpCode {
     CONST,
     POP,
     DUP,
+    MATH,
+    GET,
+    SET,
     ADD,
     SUB,
     MUL,
@@ -18,11 +21,10 @@ enum class OpCode {
     CALL,
     RET,
     HOST
-
 };
-struct Instruction
-{
+
+struct Instruction {
     OpCode op;
-    int arg1;
-    int arg2;
+    int arg1 = 0;
+    double arg2 = 0.0;
 };

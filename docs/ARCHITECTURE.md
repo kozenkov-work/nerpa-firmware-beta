@@ -1,6 +1,6 @@
 # Nerpa — Architecture and Code Map
 
-> **Status:** verified against the working tree on 2026-11-09. This document describes what is actually implemented in the source. It is not a specification of planned features.
+> **Status:** verified against the working tree on 2026-11-18. This document describes what is actually implemented in the source. It is not a specification of planned features.
 
 ## 1. Project purpose
 
@@ -26,6 +26,8 @@ Nerpa/
 ├── nerpa.ino               # Original Arduino prototype sketch (reference)
 ├── vm-contract.md          # Contract between VM programs and Host implementations
 ├── program_files/          # Sample Nerpa programs for the Desktop target
+├── tests/
+│   └── vm_tests.cpp        # Desktop VM contract tests (CTest)
 ├── docs/
 │   └── ARCHITECTURE.md     # This document
 └── src/                    # Shared VM core + Desktop platform
@@ -65,13 +67,13 @@ The ESP32 component CMake file (`src/esp32/main/CMakeLists.txt`) compiles the sh
 
 The VM core is platform-independent. It must not include ESP-IDF, Arduino or any hardware headers.
 
-- **`Value`** — a tagged value: `std::variant<int, std::string, float, bool>` with typed getters and stream output.
-- **`Stack`** — operand stack over `std::vector<Value>` with arithmetic/logic operations (`add`, `sub`, `mul`, `div`, `mod`, `eq`, `lt`, `gt`), `push`/`pop`/`top`/`dup`/`clear`.
-- **`Instruction`** — `{ OpCode op; int arg1; int arg2; }`. Opcodes: `CONST, POP, DUP, ADD, SUB, MUL, DIV, MOD, EQ, LT, GT, HALT, JMP, JMPF, CALL, RET, HOST`.
-- **`Program`** — instruction vector plus string table (`strings`) and source line mapping (`lineToIndex`).
-- **`Tokenizer`** — `load(filename)` and `loadFromString(text)`, both produce a `Program`. Throws on errors (callers handle `std::exception`).
-- **`VM`** — `run(const Program&, Host*)` executes the program synchronously. Internal state: operand stack, instruction pointer, running flag.
-- **`Host`** — abstract platform interface: `debugPrint`, `pinMode`, `digitalWrite`, `digitalRead`, `shouldStop`. The `HostFunction` enum maps bytecode-level host calls to the GPIO/debug operations. `shouldStop()` defaults to `false`; the VM polls it every 32 executed instructions so a host can request cooperative cancellation without platform dependencies in the VM core.
+- **`Value`** — a tagged value: `std::variant<double, std::string, bool, std::monostate>` implementing contract `number`, `string`, `bool` and `null`, with checked typed getters.
+- **`Stack`** — operand stack over `std::vector<Value>` with contract `MATH` dispatch (numeric, string and boolean operations), comparisons and legacy arithmetic wrappers. Underflow, invalid types and division by zero throw instead of silently leaving the stack unchanged.
+- **`Instruction`** — `{ OpCode op; int arg1; double arg2; }`; the floating-point second argument allows fractional `CONST number` values. Contract opcodes: `CONST, POP, DUP, MATH, GET, SET, EQ, LT, GT, JMP, JMPF, CALL, RET, HOST`. Legacy arithmetic and `HALT` remain supported.
+- **`Program`** — instruction vector, typed `config` values, typed default-initialized `variables`, string table (`strings`) and source line mapping (`lineToIndex`). Config defines the setup line (ID 0, default 0), required loop line (ID 1) and a boolean parameter (ID 2, default true).
+- **`Tokenizer`** — `load(filename)` and `loadFromString(text)` parse sections only in contract order (`*config`, `*variables`, `*strings`, `*code`), validate arguments and duplicate IDs, require a loop line, apply config defaults and verify setup/loop targets. Errors throw `std::exception` (callers handle them).
+- **`VM`** — `run(const Program&, Host*)` calls setup once, then invokes loop repeatedly until `Host::shouldStop()` requests cancellation. It uses an operand stack, call frames and a per-run mutable copy of variables. Every function, including setup/loop, must leave exactly one new value on `RET`; entry-function results are discarded. Reaching the end of a function without `RET` is an error. `SET` enforces the declared variable type.
+- **`Host`** — abstract platform interface: `debugPrint`, `pinMode`, `digitalWrite`, `digitalRead`, `analogWrite`, `analogRead`, `shouldStop`. Contract Host IDs 0–5 map to debug string output, GPIO and analog operations; ID 6 is a backward-compatible numeric debug extension. `shouldStop()` defaults to `false`; the VM polls it every 32 executed instructions and after each loop call.
 
 The Desktop target (`src/main.cpp`) loads a hardcoded program path (`./program_files/file.txt`) and runs it with `DesktopHost`.
 
@@ -105,7 +107,7 @@ Main responsibilities:
 
 Important implementation facts:
 
-- `runProgram()` executes the VM synchronously in the application task. While a program runs, the normal UI is not processed, but the VM polls the RESET button through `Esp32Host` every 32 instructions. RESET stops execution and leaves the console visible; a second RESET or BACK returns to the file list. UP, DOWN, SELECT and BACK remain available to the running program through `digitalRead`.
+- `runProgram()` executes the VM synchronously in the application task. While a program runs, the normal UI is not processed, but the VM checks the interrupt-driven RESET flag through `Esp32Host` every 32 instructions and after each loop call. RESET stops execution and leaves the console visible; a second RESET or BACK returns to the file list. UP, DOWN, SELECT and BACK remain available to the running program through `digitalRead`.
 - Every `debugPrint` from the VM triggers a full screen redraw via the `Esp32Host` callback (`printFromHost` → `printToConsole` + `updateScreen`).
 - The Settings state currently only handles the Back event; the screen shows a placeholder.
 - SD mounting failure is reported on the display for 2 seconds, but setup continues and returns `true`. There is no remount attempt later; a card inserted after boot is not usable until restart.
@@ -143,7 +145,7 @@ The I2C transport uses a 129-byte transfer buffer with bounds checks; I2C error 
 
 ### `input/` — physical buttons
 
-`Buttons` configures and polls five active-low buttons using GPIO pull-ups.
+`Buttons` configures five active-low buttons using GPIO pull-ups. UP, DOWN, SELECT and BACK use polling; RESET uses a falling-edge GPIO interrupt.
 
 | Button | GPIO |
 |---|---:|
@@ -153,7 +155,7 @@ The I2C transport uses a 129-byte transfer buffer with bounds checks; I2C error 
 | BACK | 26 |
 | RESET | 25 |
 
-Polling-based debounce with a 40 ms interval. `read()` returns an `Events` structure with one-shot press events. The application polls it from `App::loop()` with a 10 ms delay. During VM execution, `readReset()` polls only RESET so the other buttons remain available to the program.
+Polled buttons use a 40 ms debounce interval. `read()` returns an `Events` structure with one-shot press events. The application polls it from `App::loop()` with a 10 ms delay. The RESET ISR only sets a volatile flag; `readReset()` consumes it in task context and applies a 40 ms interval between accepted events. During VM execution, `readReset()` checks only this flag, so the other buttons remain available to the program.
 
 Do not change the active-low behavior, pin assignments or debounce logic without checking the hardware and the application interaction model.
 
@@ -189,6 +191,8 @@ Do not enable automatic formatting on mount failure unless the user explicitly r
 - `pinMode()` maps VM mode values (0=input, 1=output, 2=input+pullup, 3=input+pulldown) to ESP-IDF GPIO configuration. Unknown modes return -1. See `vm-contract.md`.
 - `digitalWrite()` controls a GPIO output level.
 - `digitalRead()` reads a GPIO level.
+- `analogWrite()` validates a 0–1 value and drives LEDC PWM at 5 kHz with 8-bit resolution. One timer is initialized lazily; GPIOs are assigned to eight channels by `pin % 8`, and a collision between different GPIOs is reported as an error.
+- `analogRead()` uses the ESP-IDF ADC oneshot API on ADC1/ADC2, 12-bit resolution and 12 dB attenuation. Raw values are normalized to 0–1 without voltage calibration; initialization and read failures are logged and reported to the VM.
 - `shouldStop()` calls back into `App` and reports a debounced RESET press.
 
 `Esp32Host` receives a context pointer plus console and stop-check callbacks in its constructor; the callbacks point back to the owning `App` instance.
@@ -252,11 +256,11 @@ Treat these as the current expected wiring, not as permission to change it.
 
 ## 8. Build configuration notes
 
-**Desktop:** root `CMakeLists.txt`, C++17, single `nerpa` executable. Build with `cmake -B build && cmake --build build`. Warnings: `-Wall -Wextra -pedantic` (GCC/Clang) or `/W4` (MSVC).
+**Desktop:** root `CMakeLists.txt`, C++17, `nerpa` executable plus a `vm_tests` CTest target when `BUILD_TESTING` is enabled (the CMake default). Build and test with `cmake -B build && cmake --build build && ctest --test-dir build --output-on-failure`. Warnings: `-Wall -Wextra -pedantic` (GCC/Clang) or `/W4` (MSVC).
 
 **ESP32:** `src/esp32/` is an ESP-IDF project (`IDF_TARGET=esp32`), application component set to C++17. The user develops on Omarchy (Arch-based Linux) with ESP-IDF 6.1 invoked through the local `esp32.sh` wrapper. Inspect the wrapper before suggesting build commands.
 
-The firmware component declares dependencies on: `u8g2`, `fatfs`, `sdmmc`, `esp_driver_gpio`, `esp_driver_i2c`, `esp_driver_spi`.
+The firmware component declares dependencies on: `u8g2`, `fatfs`, `sdmmc`, `esp_driver_gpio`, `esp_driver_i2c`, `esp_driver_spi`, `esp_driver_ledc`, `esp_adc`.
 
 `NERPA_DISPLAY_DIAGNOSTIC` is a CMake option that switches the firmware to an OLED-only diagnostic loop.
 
@@ -266,7 +270,7 @@ Do not edit generated build output as a substitute for editing source or configu
 
 These are observations or verification gaps, not necessarily defects:
 
-1. The ESP32 application executes the VM synchronously inside `App::runProgram()`; normal UI input is unresponsive while a program runs. RESET provides cooperative cancellation every 32 instructions, but the rest of the menu remains inactive until execution stops.
+1. The ESP32 application executes the VM synchronously inside `App::runProgram()`; normal UI input is unresponsive while a program runs. RESET provides cooperative cancellation through its interrupt flag, but the rest of the menu remains inactive until execution stops.
 2. Every VM `debugPrint` triggers a full 1 KB framebuffer redraw over I2C.
 3. The Settings screen has no settings actions; it shows a placeholder text.
 4. The SD file list includes all regular files in the root directory, including hidden and service files (e.g. `System Volume Information`).
