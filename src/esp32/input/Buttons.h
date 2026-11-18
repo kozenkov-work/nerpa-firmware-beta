@@ -10,12 +10,14 @@ public:
         bool down = false;
         bool select = false;
         bool back = false;
+        bool reset = false;
 
-        bool any() const { return up || down || select || back; }
+        bool any() const { return up || down || select || back || reset; }
     };
 
     bool begin();
     Events read();
+    bool readReset();
 
 private:
     struct ButtonState {
@@ -31,4 +33,5 @@ private:
     ButtonState down_{GPIO_NUM_14};
     ButtonState select_{GPIO_NUM_27};
     ButtonState back_{GPIO_NUM_26};
+    ButtonState reset_{GPIO_NUM_25};
 };

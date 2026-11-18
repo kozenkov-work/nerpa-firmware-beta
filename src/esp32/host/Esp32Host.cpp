@@ -10,6 +10,10 @@ void Esp32Host::debugPrint(const std::string& text) {
     consolePrinter_(context_, text);
 }
 
+bool Esp32Host::shouldStop() {
+    return stopChecker_(context_);
+}
+
 int Esp32Host::pinMode(int pin, int mode) {
     gpio_mode_t gpioMode;
     switch (mode) {

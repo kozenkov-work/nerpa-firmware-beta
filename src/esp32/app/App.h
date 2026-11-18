@@ -19,6 +19,7 @@ private:
     enum class State { Start, Settings, FileList, Console };
 
     static void printFromHost(void* context, const std::string& text);
+    static bool stopFromInput(void* context);
 
     bool loadFileList();
     void printToConsole(const std::string& text);
@@ -43,4 +44,5 @@ private:
     std::vector<std::string> consoleLines_;
     int consoleScrollIndex_ = 0;
     bool consoleAutoScroll_ = true;
+    bool programStoppedByReset_ = false;
 };

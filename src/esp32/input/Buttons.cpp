@@ -12,7 +12,7 @@ constexpr TickType_t DEBOUNCE_TIME = pdMS_TO_TICKS(40);
 
 bool Buttons::begin() {
     bool success = true;
-    for (ButtonState* button : {&up_, &down_, &select_, &back_}) {
+    for (ButtonState* button : {&up_, &down_, &select_, &back_, &reset_}) {
         esp_err_t result = gpio_set_direction(button->pin, GPIO_MODE_INPUT);
         if (result == ESP_OK) {
             result = gpio_set_pull_mode(button->pin, GPIO_PULLUP_ONLY);
@@ -31,7 +31,7 @@ bool Buttons::begin() {
     }
 
     if (success) {
-        std::printf("Buttons configured: UP=13 DOWN=14 SELECT=27 BACK=26 (pull-up)\n");
+        std::printf("Buttons configured: UP=13 DOWN=14 SELECT=27 BACK=26 RESET=25 (pull-up)\n");
     }
     return success;
 }
@@ -59,5 +59,10 @@ Buttons::Events Buttons::read() {
     events.down = update(down_);
     events.select = update(select_);
     events.back = update(back_);
+    events.reset = update(reset_);
     return events;
+}
+
+bool Buttons::readReset() {
+    return update(reset_);
 }
