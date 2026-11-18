@@ -19,5 +19,6 @@ public:
     virtual int pinMode(int pin, int mode) = 0;
     virtual int digitalWrite(int pin, int value) = 0;
     virtual int digitalRead(int pin) = 0;
+    virtual bool shouldStop() { return false; }
 
 };

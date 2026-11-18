@@ -14,7 +14,7 @@ constexpr int MAX_LINES = 3;
 constexpr std::size_t MAX_CONSOLE_LINES = 15;
 }
 
-App::App() : host_(this, printFromHost) {}
+App::App() : host_(this, printFromHost, stopFromInput) {}
 
 bool App::setup() {
     std::printf("Nerpa: device starting\n");
@@ -70,6 +70,14 @@ void App::printFromHost(void* context, const std::string& text) {
     app->updateScreen();
 }
 
+bool App::stopFromInput(void* context) {
+    auto* app = static_cast<App*>(context);
+    if (!app->buttons_.readReset()) return false;
+
+    app->programStoppedByReset_ = true;
+    return true;
+}
+
 bool App::loadFileList() {
     fileTopIndex_ = 0;
     return storage_.loadFileList(fileNames_);
@@ -91,6 +99,7 @@ void App::runProgram(const std::string& fileName) {
     consoleLines_.clear();
     consoleScrollIndex_ = 0;
     consoleAutoScroll_ = true;
+    programStoppedByReset_ = false;
     state_ = State::Console;
 
     printToConsole("Запуск: " + fileName);
@@ -112,8 +121,13 @@ void App::runProgram(const std::string& fileName) {
 
         VM vm;
         vm.run(program, &host_);
-        std::printf("Program finished: %s\n", fileName.c_str());
-        printToConsole("Программа завершена");
+        if (programStoppedByReset_) {
+            std::printf("Program stopped by RESET: %s\n", fileName.c_str());
+            printToConsole("Программа остановлена");
+        } else {
+            std::printf("Program finished: %s\n", fileName.c_str());
+            printToConsole("Программа завершена");
+        }
     } catch (const std::exception& error) {
         std::printf("Nerpa error: %s\n", error.what());
         printToConsole(std::string("Ошибка: ") + error.what());
@@ -182,6 +196,6 @@ void App::handleConsole(const Buttons::Events& events) {
             consoleAutoScroll_ = true;
         }
     }
-    if (events.back) state_ = State::FileList;
+    if (events.back || events.reset) state_ = State::FileList;
     if (events.any()) updateScreen();
 }

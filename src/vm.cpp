@@ -1,15 +1,27 @@
 
 #include "vm.h"
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
+
+namespace {
+constexpr std::uint32_t STOP_CHECK_INTERVAL = 32;
+}
 
 void VM::run(const Program& program, Host* host) {
     ip_ = 0;
     running_ = true;
     stack_.clear();
 
+    std::uint32_t instructionCounter = 0;
     while (running_) {
+        if (instructionCounter++ % STOP_CHECK_INTERVAL == 0 &&
+            host != nullptr && host->shouldStop()) {
+            running_ = false;
+            break;
+        }
+
         if (ip_ >= program.code.size()) throw std::runtime_error("Instruction pointer out of bounds");
 
         const Instruction& instruction = program.code[ip_];
